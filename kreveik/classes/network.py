@@ -452,6 +452,12 @@ class Network(TopologicalNetwork,Element):
         state = [list(state_bool)]
         self.state = num.array(state)
         
+    def set_mask(self,mask):
+        """
+        Sets the given mask as the new mask function.
+        """
+        self.mask=mask
+        
     def plot_state(self,last=20):
         '''
         Plots the last 20 states as a black and white strips vertically.
