@@ -102,7 +102,7 @@ class Family(other.ProbeableObj,other.Ensemble):
         plt.plot(self.scores)
         plt.show()
     
-    def populate_equilibria(self,pp=False):
+    def populate_equilibria(self,pp=False, averaging=False):
         '''
         If the family has individuals, it goes to each individual and finds the equilibria 
         for all possible initial conditions they may face. The orbits and scores are 
@@ -115,11 +115,14 @@ class Family(other.ProbeableObj,other.Ensemble):
             
         self.scores = num.zeros(len(self.network_list))
        
-        
+        mean_lengths = num.zeros(len(self.network_list))
+        mean=0
         for counter,network in enumerate(self.network_list): 
             logging.info("("+str(counter+1)+"/"+str(len(self.network_list))
                          +") Populating equilibrium for: "+str(network))
-            network.populate_equilibria()
+            network.populate_equilibria(mean_trajectory_length=mean)
+            mean_lengths[counter] = network.trajectory_lengths.mean()
+            mean = int(mean_lengths.sum()/(counter+1))
             self.scores[counter] = network.score
         self.populate_probes(kreveik.probes.populate_equilibria_in_family)
             
