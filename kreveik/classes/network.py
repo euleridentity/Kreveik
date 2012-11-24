@@ -532,7 +532,7 @@ class Network(TopologicalNetwork,Element):
 
         
             
-    def populate_equilibria(self,orbit_extraction=False):
+    def populate_equilibria(self,orbit_extraction=False, averaging=False, mean_trajectory_length=0):
         '''
         Creates all possible initial conditions by listing all possible 2^n boolean states.
         Then runs populate_equilibrium for each of them.
@@ -548,20 +548,23 @@ class Network(TopologicalNetwork,Element):
         if not(hasattr(self,"orbits")):
             if orbit_extraction:
                 self.orbits = num.array([None]*2**self.n_nodes)
+        if not(hasattr(self,"trajectory_lengths")):
+            self.trajectory_lengths = num.zeros(2**self.n_nodes)
                 
         self.equilibria = num.zeros(2**self.n_nodes)
         if orbit_extraction:
             self.orbits = num.array([None]*2**self.n_nodes)
         
         binspace = range(0,num.power(2,self.n_nodes))
-        unit_advance = 1
+        unit_advance = 1 + mean_trajectory_length
         for location,state in enumerate(binspace):
             result =  self.search_equilibrium(2**self.n_nodes,state,orbit_extraction,def_advance=unit_advance)
             (orbit_length,orbit,trajectory_length) = result
             if orbit_extraction:
                 self.orbits[location] = orbit
             self.equilibria[location] = orbit_length
-            unit_advance = trajectory_length
+            self.trajectory_lengths[location] = trajectory_length
+            unit_advance = trajectory_length + mean_trajectory_length
             
         self.populate_probes(probes.populate_equilibria)
 
