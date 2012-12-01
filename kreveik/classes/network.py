@@ -491,7 +491,7 @@ class Network(TopologicalNetwork,Element):
         plt.show()
              
            
-    def search_equilibrium(self,chaos_limit,starter_state,orbit_extraction=False,def_advance=1):
+    def search_equilibrium(self,chaos_limit,starter_state,orbit_extraction=False,trajectory_extraction=False, def_advance=1):
         '''
         Searches for an equilibrium point, or a limit cycle. 
         Returns the state vector, or the state vector list, if the equilibrium is a limit cycle.
@@ -505,15 +505,22 @@ class Network(TopologicalNetwork,Element):
 
         self.set_state(starter_state)
         starter_state = self.state[-1]
+        if trajectory_extraction:
+            trajectory=starter_state
+        else:
+            trajectory= None
         
         for ctr in xrange(chaos_limit):
 
             self.advance(def_advance)
+            
                 
             row = num.all(self.state[-1] == self.state, axis=1) 
             where = num.where(row==True)
-            
-            if len(where[0])> 1:
+            if len(where[0])<= 1:
+                if trajectory_extraction:
+                    trajectory.append(self.state[-1])
+            else:
                 frst_where = where[0][0]
                 scnd_where = where[0][1]
                 
@@ -527,12 +534,12 @@ class Network(TopologicalNetwork,Element):
 
                 self.populate_probes(probes.search_equilibrium)
                 trajectory_length = frst_where+1
-                return (orbit_length,orbit,trajectory_length)
+                return (orbit_length,orbit,trajectory_length, trajectory)
             
 
         
             
-    def populate_equilibria(self,orbit_extraction=False, averaging=False, mean_trajectory_length=0):
+    def populate_equilibria(self,orbit_extraction=False, trajectory_extraction=False, averaging=False, mean_trajectory_length=0):
         '''
         Creates all possible initial conditions by listing all possible 2^n boolean states.
         Then runs populate_equilibrium for each of them.
@@ -548,12 +555,16 @@ class Network(TopologicalNetwork,Element):
         if not(hasattr(self,"orbits")):
             if orbit_extraction:
                 self.orbits = num.array([None]*2**self.n_nodes)
+            if trajectory_extraction:
+                self.trajectories = num.array([None]*2**self.n_nodes)
         if not(hasattr(self,"trajectory_lengths")):
             self.trajectory_lengths = num.zeros(2**self.n_nodes)
                 
         self.equilibria = num.zeros(2**self.n_nodes)
         if orbit_extraction:
             self.orbits = num.array([None]*2**self.n_nodes)
+        if trajectory_extraction:
+            self.trajectories = num.array([None]*2**self.n_nodes)
         
         binspace = range(0,num.power(2,self.n_nodes))
         unit_advance = 1 + mean_trajectory_length
@@ -562,6 +573,9 @@ class Network(TopologicalNetwork,Element):
             (orbit_length,orbit,trajectory_length) = result
             if orbit_extraction:
                 self.orbits[location] = orbit
+            if trajectory_extraction:
+                self.trajectories[location] = trajectory
+  
             self.equilibria[location] = orbit_length
             self.trajectory_lengths[location] = trajectory_length
             unit_advance = trajectory_length + mean_trajectory_length
