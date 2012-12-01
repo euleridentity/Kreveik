@@ -505,10 +505,6 @@ class Network(TopologicalNetwork,Element):
 
         self.set_state(starter_state)
         starter_state = self.state[-1]
-        if trajectory_extraction:
-            trajectory=starter_state
-        else:
-            trajectory= None
         
         for ctr in xrange(chaos_limit):
 
@@ -517,21 +513,21 @@ class Network(TopologicalNetwork,Element):
                 
             row = num.all(self.state[-1] == self.state, axis=1) 
             where = num.where(row==True)
-            if len(where[0])<= 1:
-                if trajectory_extraction:
-                    trajectory.append(self.state[-1])
-            else:
+            
+            if len(where[0]) > 1:
                 frst_where = where[0][0]
                 scnd_where = where[0][1]
                 
                 orbit_length = scnd_where-frst_where
                 
                 orbit = None
+                trajectory = None
                 location = reduce(lambda x,y : 2*x+y, starter_state)
                 
                 if orbit_extraction:
                     orbit = self.state[frst_where:scnd_where]
-
+                if trajectory_extraction:
+                    trajectory = self.state[:frst_where+1]
                 self.populate_probes(probes.search_equilibrium)
                 trajectory_length = frst_where+1
                 return (orbit_length,orbit,trajectory_length, trajectory)
