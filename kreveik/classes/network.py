@@ -566,54 +566,70 @@ normalize -> normalizes the scores to the value given.
         self.populate_probes(probes.populate_equilibria)
         
 #TODO            
-#    def populate_equilibria_trial(self, orbit_extraction=False, trajectory_extraction=False, averaging=False, mean_trajectory_length=0):
-#        '''
-#        Creates all possible initial conditions by listing all possible 2^n boolean states.
-#        Then runs populate_equilibrium for each of them.
-#            populate_equilibrium returns orbits and-or degrees of the orbits.
-#        Gives scores to each of the networks, depending on the degree of the orbit each initial condition
-#        rests on.
-#        Input Arguments:
-#            normalize -> normalizes the scores to the value given.
-#        '''
-#        
-#        if not(hasattr(self, "equilibria")):
-#            self.equilibria = num.zeros(2 ** self.n_nodes)
-#        if not(hasattr(self, "orbits")):
-#            if orbit_extraction:
-#                self.orbits = num.array([None] * 2 ** self.n_nodes)
-#        if not(hasattr(self, "orbits")):
-#            if trajectory_extraction:
-#                self.trajectories = num.array([None] * 2 ** self.n_nodes)
-#        if not(hasattr(self, "trajectory_lengths")):
-#            self.trajectory_lengths = num.zeros(2 ** self.n_nodes)
-#                
-#        self.equilibria = num.zeros(2 ** self.n_nodes)
-#        if orbit_extraction:
-#            self.orbits = num.array([None] * 2 ** self.n_nodes)
-#        if trajectory_extraction:
-#            self.trajectories = num.array([None] * 2 ** self.n_nodes)
-#        
-#        binspace = range(0, num.power(2, self.n_nodes))
-#        unit_advance = 1 + mean_trajectory_length
-#        for location, state in enumerate(binspace):
-#            if self.equilibria[location] == 0:                
-#                result = self.search_equilibrium(2 ** self.n_nodes, state, orbit_extraction, def_advance=unit_advance)
-#                (orbit_length, orbit, trajectory_length, trajectory) = result
-#                if orbit_extraction:
-#                    self.orbits[location] = orbit
-#                if trajectory_extraction:
-#                    self.trajectories[location] = trajectory
-#                int_state_list = [num.array([self.state[j][i]*2**(self.n_nodes-i-1) for i in range(self.n_nodes)]).sum() for j in range(len(self.state))]
-#                for int_state in int_state_list:
-#                    self.equilibria[int_state] = orbit_length
-#                    self.trajectory_lengths[int_state] = trajectory_length
-#                if averaging:
-#                    trajectory_length=int(self.trajectory_lengths[:location+1].sum()/(location+1))
-#                unit_advance = trajectory_length + mean_trajectory_length
-#            
-#        self.populate_probes(probes.populate_equilibria)
-
+    def populate_equilibria_trial(self, orbit_extraction=False, trajectory_extraction=False, averaging=False, mean_trajectory_length=0):
+        '''
+        Creates all possible initial conditions by listing all possible 2^n boolean states.
+        Then runs populate_equilibrium for each of them.
+            populate_equilibrium returns orbits and-or degrees of the orbits.
+        Gives scores to each of the networks, depending on the degree of the orbit each initial condition
+        rests on.
+        Input Arguments:
+            normalize -> normalizes the scores to the value given.
+        '''
+        
+        if not(hasattr(self, "equilibria")):
+            self.equilibria = num.zeros(2 ** self.n_nodes)
+        if not(hasattr(self, "orbits")):
+            if orbit_extraction:
+                self.orbits = num.array([None] * 2 ** self.n_nodes)
+        if not(hasattr(self, "trajectories")):
+            if trajectory_extraction:
+                self.trajectories = num.array([None] * 2 ** self.n_nodes)
+        if not(hasattr(self, "trajectory_lengths")):
+            self.trajectory_lengths = num.zeros(2 ** self.n_nodes)
+                
+        self.equilibria = num.zeros(2 ** self.n_nodes)
+        if orbit_extraction:
+            self.orbits = num.array([None] * 2 ** self.n_nodes)
+        if trajectory_extraction:
+            self.trajectories = num.array([None] * 2 ** self.n_nodes)
+        state_list = num.array([None] * 2 ** self.n_nodes)
+        binspace = range(0, num.power(2, self.n_nodes))
+        unit_advance = 1 + mean_trajectory_length
+        for location, state in enumerate(binspace):
+            where=num.where([state_list[i] is not None for i in range(len(state_list))])
+            state = [int(strings) == True for strings in list(num.binary_repr((state), 
+                                                                              width=self.n_nodes))]
+            narrowed_list=state_list[where[0]]
+            if len(where[0])>0:
+                row=[num.any(num.all(narrowed_list[i]==state, axis=1)) for i in range(len(narrowed_list))]
+                in_where=num.where(row)
+                new_list=narrowed_list[in_where]
+            else:
+                new_list=[]
+            
+            if len(new_list)>0: 
+                if orbit_extraction:
+                    self.orbits[location] = self.orbits[where[0][in_where[0][0]]]
+                if trajectory_extraction:
+                    self.trajectories[location] = self.trajectories[where[0][in_where[0][0]]]
+                self.equilibria[location] = self.equilibria[where[0][in_where[0][0]]]
+                self.trajectory_lengths[location] = self.trajectory_lengths[where[0][in_where[0][0]]]
+            else:               
+                result = self.search_equilibrium(2 ** self.n_nodes, state, orbit_extraction, def_advance=unit_advance)
+                (orbit_length, orbit, trajectory_length, trajectory) = result
+                if orbit_extraction:
+                    self.orbits[location] = orbit
+                if trajectory_extraction:
+                    self.trajectories[location] = trajectory
+                self.equilibria[location] = orbit_length
+                self.trajectory_lengths[location] = trajectory_length
+                state_list[location]=self.state
+                if averaging:
+                    trajectory_length=int(self.trajectory_lengths[:location+1].sum()/(location+1))
+                unit_advance = trajectory_length + mean_trajectory_length
+            
+        self.populate_probes(probes.populate_equilibria)
 
 #def initial_states_of_orbits(self):
 #    """
