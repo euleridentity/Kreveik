@@ -121,8 +121,8 @@ class Family(other.ProbeableObj,other.Ensemble):
             logging.info("("+str(counter+1)+"/"+str(len(self.network_list))
                          +") Populating equilibrium for: "+str(network))
             network.populate_equilibria(mean_trajectory_length=mean)
-            mean_lengths[counter] = network.trajectory_lengths.mean()
-            mean = int(mean_lengths.sum()/(counter+1))
+#            mean_lengths[counter] = network.trajectory_lengths.mean()
+#            mean = int(mean_lengths.sum()/(counter+1))
             self.scores[counter] = network.score
         self.populate_probes(kreveik.probes.populate_equilibria_in_family)
             

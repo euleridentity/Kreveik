@@ -532,10 +532,41 @@ class Network(TopologicalNetwork, Element):
                 trajectory_length = frst_where + 1
                 return (orbit_length, orbit, trajectory_length, trajectory)
             
-
+    def populate_equilibria(self,orbit_extraction=False, mean_trajectory_length=0):
+        '''
+Creates all possible initial conditions by listing all possible 2^n boolean states.
+Then runs populate_equilibrium for each of them.
+populate_equilibrium returns orbits and-or degrees of the orbits.
+Gives scores to each of the networks, depending on the degree of the orbit each initial condition
+rests on.
+Input Arguments:
+normalize -> normalizes the scores to the value given.
+'''
         
+        if not(hasattr(self,"equilibria")):
+            self.equilibria = num.zeros(2**self.n_nodes)
+        if not(hasattr(self,"orbits")):
+            if orbit_extraction:
+                self.orbits = num.array([None]*2**self.n_nodes)
+                
+        self.equilibria = num.zeros(2**self.n_nodes)
+        if orbit_extraction:
+            self.orbits = num.array([None]*2**self.n_nodes)
+        
+        binspace = range(0,num.power(2,self.n_nodes))
+        unit_advance = 1
+        for location,state in enumerate(binspace):
+            result = self.search_equilibrium(2**self.n_nodes,state,orbit_extraction,def_advance=unit_advance)
+            (orbit_length,orbit,trajectory_length, trajectories) = result
+            if orbit_extraction:
+                self.orbits[location] = orbit
+            self.equilibria[location] = orbit_length
+            unit_advance = trajectory_length
             
-    def populate_equilibria(self, orbit_extraction=False, trajectory_extraction=False, averaging=False, mean_trajectory_length=0):
+        self.populate_probes(probes.populate_equilibria)
+        
+#TODO            
+    def populate_equilibria_trial(self, orbit_extraction=False, trajectory_extraction=False, averaging=False, mean_trajectory_length=0):
         '''
         Creates all possible initial conditions by listing all possible 2^n boolean states.
         Then runs populate_equilibrium for each of them.
@@ -551,7 +582,7 @@ class Network(TopologicalNetwork, Element):
         if not(hasattr(self, "orbits")):
             if orbit_extraction:
                 self.orbits = num.array([None] * 2 ** self.n_nodes)
-        if not(hasattr(self, "orbits")):
+        if not(hasattr(self, "trajectories")):
             if trajectory_extraction:
                 self.trajectories = num.array([None] * 2 ** self.n_nodes)
         if not(hasattr(self, "trajectory_lengths")):
@@ -562,40 +593,43 @@ class Network(TopologicalNetwork, Element):
             self.orbits = num.array([None] * 2 ** self.n_nodes)
         if trajectory_extraction:
             self.trajectories = num.array([None] * 2 ** self.n_nodes)
-        
+        state_list = num.array([None] * 2 ** self.n_nodes)
         binspace = range(0, num.power(2, self.n_nodes))
         unit_advance = 1 + mean_trajectory_length
         for location, state in enumerate(binspace):
-            if self.equilibria[location] != None:                
+            where=num.where([state_list[i] is not None for i in range(len(state_list))])
+            state = [int(strings) == True for strings in list(num.binary_repr((state), 
+                                                                              width=self.n_nodes))]
+            narrowed_list=state_list[where[0]]
+            if len(where[0])>0:
+                row=[num.any(num.all(narrowed_list[i]==state, axis=1)) for i in range(len(narrowed_list))]
+                in_where=num.where(row)
+                new_list=narrowed_list[in_where]
+            else:
+                new_list=[]
+            
+            if len(new_list)>0: 
+                if orbit_extraction:
+                    self.orbits[location] = self.orbits[where[0][in_where[0][0]]]
+                if trajectory_extraction:
+                    self.trajectories[location] = self.trajectories[where[0][in_where[0][0]]]
+                self.equilibria[location] = self.equilibria[where[0][in_where[0][0]]]
+                self.trajectory_lengths[location] = self.trajectory_lengths[where[0][in_where[0][0]]]
+            else:               
                 result = self.search_equilibrium(2 ** self.n_nodes, state, orbit_extraction, def_advance=unit_advance)
                 (orbit_length, orbit, trajectory_length, trajectory) = result
                 if orbit_extraction:
                     self.orbits[location] = orbit
                 if trajectory_extraction:
                     self.trajectories[location] = trajectory
-                string_repr=[[str(self.state[j][i] * 1) for i in range(len(self.state[j]))] for j in range(len(self.state))]
-                int_state_list = [int(''.join(string_repr[k]), 2) for k in range(len(string_repr))]
-                for int_state in int_state_list:
-                    self.equilibria[int_state] = orbit_length
-                    self.trajectory_lengths[int_state] = trajectory_length
+                self.equilibria[location] = orbit_length
+                self.trajectory_lengths[location] = trajectory_length
+                state_list[location]=self.state
+                if averaging:
+                    trajectory_length=int(self.trajectory_lengths[:location+1].sum()/(location+1))
                 unit_advance = trajectory_length + mean_trajectory_length
             
         self.populate_probes(probes.populate_equilibria)
-
-def search_all_orbits(self):
-    """
-    Searches orbits for all initial conditions.
-    Returns the list of orbits for each initial state.
-    """
-    
-    import numpy as num
-    
-    binspace = range(0, num.power(2, self.n_nodes))
-    orbits_of_initials = []
-    for state in binspace:
-        (orbit_length, orbit) = self.search_equilibrium(2 ** self.n_nodes, state, True)
-        orbits_of_initials.append(orbit)
-    return orbits_of_initials
 
 #def initial_states_of_orbits(self):
 #    """

@@ -75,7 +75,7 @@ def orbit_count_f(network):
     genuine_orbits = []
     genuine_orbit_lengths=[]
     for state in binspace:
-        (orbit_length,orbit) = network.search_equilibrium(2**network.n_nodes,state,True)
+        (orbit_length,orbit, trajectory_length) = network.search_equilibrium(2**network.n_nodes,state,True)
         is_in_list = False
         for old_orbit in genuine_orbits:
             for state in old_orbit:
