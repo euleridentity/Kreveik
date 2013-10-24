@@ -115,7 +115,7 @@ def randomize(network, number):
     for i in range(number):
         new_network=network_list[i].copy()
         network_list.append(mutators.degree_preserving_mutation(new_network))
-    return network_list
+    return network_list[-1]
 
 def randomize_preserving_total_degree(network, number):
     """
@@ -143,7 +143,7 @@ def randomize_preserving_total_degree(network, number):
             else:
                 adjacency_sequence[index] = 1
                 j = j + 1
-        new_network.adjacency = adjacency_sequence.reshape(7,7)
+        new_network.adjacency = adjacency_sequence.reshape(network.n_nodes,network.n_nodes)
         network_list.append(new_network.copy())
         
     return network_list

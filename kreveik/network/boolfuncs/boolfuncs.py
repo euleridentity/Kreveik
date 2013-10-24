@@ -20,40 +20,45 @@
 import numpy as num
 import logging
 import boolfuncs_c #@UnresolvedImport
+import copy
 
-def xor_masking(network,state):
+def xor_masking(network,state,steps):
     """
    
     """
     
     state = num.array(state,dtype=bool)
-    newstate = num.array([None]*network.n_nodes)
+#    newstate = num.array([None]*network.n_nodes)
+    states = []
+    newstate = copy.deepcopy(state)
+    for counter in xrange(steps):
+        for i in xrange(network.n_nodes):
+            # Detect all nodes that have an incoming connection
+        
+            nonzero_of_adj = network.adjacency[i,].nonzero()[0]
+        
+            # Reduce the boolean function and the state to a boolean function
+            # and state concerning only the incoming connections.
+        
+            short_mask = network.mask[i,].take(nonzero_of_adj)
+            short_state = state.take(nonzero_of_adj)
     
-    for i in xrange(network.n_nodes):
-        #    Detect all nodes that have an incoming connection
-        
-        nonzero_of_adj = network.adjacency[i,].nonzero()[0]
-        
-        #    Reduce the boolean function and the state to a boolean function
-        #     and state concerning only the incoming connections.
-        
-        short_mask = network.mask[i,].take(nonzero_of_adj)
-        short_state = state.take(nonzero_of_adj)
-    
-        #    Two vectors are XOR' d element wise, and is summed in modulo 2
-        #    This corresponds to i th node operating its boolean function over the same
-        #    state vector.
-        
-        newstate[i] = (num.logical_xor(short_mask,short_state).sum()<len(short_state)/2.0)
-        
+            # Two vectors are XOR' d element wise, and is summed in modulo 2
+            # This corresponds to i th node operating its boolean function over the same
+            # state vector.
+            if len(nonzero_of_adj)>0:
+                newstate[i] = (num.logical_xor(short_mask,short_state).sum()>len(short_state)/2.0)     
+        states.append(copy.deepcopy(newstate)) 
+        state = copy.deepcopy(newstate)
     try:
-        return newstate
+        return states
     except:
         logging.error("XOR masking failed in network")
         logging.error("Printing id:")
         logging.error(id(network))
         return False
-
+    
+    
 def alternate_xor_masking(network,state):
     """
     Differs from xor_masking by returning true as components of newstate
@@ -137,7 +142,8 @@ def advance_C(network,state,steps):
 def xor_masking_C(network,state,steps):
     states = [boolfuncs_c.xor_masking_c(network.adjacency,network.mask,state)]
     for counter in xrange(steps-1):
-        state = network.state[-1]
+#        state = network.state[-1]
+        state = states[-1]
         newstate = boolfuncs_c.xor_masking_c(network.adjacency,network.mask,state)
         states = num.append(states,[newstate],axis=0)
     return states
