@@ -123,6 +123,16 @@ static PyObject* advance_c(PyObject *self, PyObject *args){
 						}
 					}
 
+					//
+					// state_value_ptr points back to the node that we want to find the value of !!!
+					//
+
+					if(step==0){
+						state_value_ptr = (state_arr->data + i*state_arr->strides[0]);
+					} else {
+						state_value_ptr = (state_out->data + (step-1)*state_out->strides[0] + i*state_out->strides[1]);
+					}
+
 					state_out_ptr = (state_out->data + step*state_out->strides[0] + i*state_out->strides[1]);
 
 					if (conn_ctr < sum*2){
@@ -130,7 +140,7 @@ static PyObject* advance_c(PyObject *self, PyObject *args){
 					}
 					else if (conn_ctr == 0) {
 						// if there is no incoming connections, the state will remain as is.
-						*state_out_ptr =  *state_value_ptr;
+						*state_out_ptr =  *(bool *) state_value_ptr;
 					}
 					else {
 						*state_out_ptr =  false;
