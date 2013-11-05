@@ -209,13 +209,19 @@ static PyObject* xor_masking_c(PyObject *self, PyObject *args){
                     conn_ctr++;
                 }
             }
+
+			//
+			// state_value_ptr points back to the node that we want to find the value of !!!
+			//
+
+            state_value_ptr = (state_arr->data + i*state_arr->strides[0]);
             state_out_ptr = (state_out->data + i*state_out->strides[0]);
             if (conn_ctr < sum*2){
                 *state_out_ptr =  true;
             }
             else if (conn_ctr == 0) {
 				// if there is no incoming connections, the state will remain as is.
-				*state_out_ptr =  *state_value_ptr;
+				*state_out_ptr =  *(bool *) state_value_ptr;
 			}
             else {
                 *state_out_ptr =  false;
@@ -285,13 +291,19 @@ static PyObject* and_masking_c(PyObject *self, PyObject *args){
                     conn_ctr++;
                 }
             }
+
+			//
+			// state_value_ptr points back to the node that we want to find the value of !!!
+			//
+
+            state_value_ptr = (state_arr->data + i*state_arr->strides[0]);
             state_out_ptr = (state_out->data + i*state_out->strides[0]);
             if (conn_ctr < sum*2){
                 *state_out_ptr =  true;
             }
             else if (conn_ctr == 0) {
 				// if there is no incoming connections, the state will remain as is.
-				*state_out_ptr =  *state_value_ptr;
+				*state_out_ptr =  *(bool *) state_value_ptr;
 			}
             else {
                 *state_out_ptr =  false;
@@ -360,13 +372,20 @@ static PyObject* or_masking_c(PyObject *self, PyObject *args){
                     conn_ctr++;
                 }
             }
+
+			//
+			// state_value_ptr points back to the node that we want to find the value of !!!
+			//
+
             state_out_ptr = (state_out->data + i*state_out->strides[0]);
+            state_value_ptr = (state_arr->data + i*state_arr->strides[0]);
+
             if (conn_ctr < sum*2){
                 *state_out_ptr =  true;
             }
             else if (conn_ctr == 0) {
 				// if there is no incoming connections, the state will remain as is.
-				*state_out_ptr =  *state_value_ptr;
+				*state_out_ptr =  *(bool *) state_value_ptr;
 			}
             else {
                 *state_out_ptr =  false;
